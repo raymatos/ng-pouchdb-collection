@@ -7,9 +7,9 @@ Special Thanks to @danielzen for his starter [codebase](https://github.com/danie
   TODO: add bower and node 
 
 # requires
-  [pouchdb](https://github.com/pouchdb/pouchdb)
-  [pouchdb-upsert](https://github.com/pouchdb/upsert)
-  [angular-pouchdb](https://github.com/angular-pouchdb/angular-pouchdb)
+  *[pouchdb](https://github.com/pouchdb/pouchdb)
+  *[pouchdb-upsert](https://github.com/pouchdb/upsert)
+  *[angular-pouchdb](https://github.com/angular-pouchdb/angular-pouchdb)
 
 # building
 
