@@ -1,5 +1,5 @@
 # ng-pouchdb-collection
-Pouchdb collection module for angular.  Using the one db per user methodology, plugin takes in the user db and a collection name.  Create a view for that collection, all dual bindings included for angular views, no need to call $scope.apply() 
+Pouchdb collection module for angular.  Using the "one db per user" methodology, plugin takes in the user db and a collection name.  Create a view for that collection, all dual bindings included for angular views, no need to call $scope.apply() 
 
 Special Thanks to @danielzen for his starter [codebase](https://github.com/danielzen/ng-pouchdb)
 
