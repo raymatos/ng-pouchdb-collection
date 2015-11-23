@@ -26,25 +26,6 @@ angular.module('pouchdb')
       var remoteDb = new pouchDB("http://127.0.0.1:5984/"+userDB);
       var sync;
 
-      //setup
-      // var ddoc = {
-      //   _id: '_design/' + colName,
-      //   views: {
-      //     collection: {
-      //       map: "function(doc) { if (doc.type == '"+colName+"')  emit(null, doc)}"
-      //     }
-      //   }
-      // };
-      // // save it
-      // db.put(ddoc).then(function () {
-      //   console.log("success added design doc");
-      // }).catch(function (err) {
-      //   if(err.status === 409){
-      //     db.update
-      //   }
-      //   console.log("doc already exist", err)
-      // });
-
       // //insert the view this collection will use
       db.upsert('_design/' + collectionName, function (doc) {
         return {
@@ -56,8 +37,39 @@ angular.module('pouchdb')
         };
       }).then(function (res) {
         console.log("success added design doc", res);
+        db.changes({
+          live: true,
+          filter: '_view',
+          view: collectionName + '/collection'
+        }).on('change', function (change) {
+          console.log("@@@@@@@@")
+          if (!change.deleted) {
+              db.get(change.id).then(function(data) {
+                if (indexes[change.id] == undefined) { // CREATE / READ
+                  addChild(collection.length, new PouchDbItem(data, collection.length)); // Add to end
+                  updateIndexes(0);
+                } else { // UPDATE
+                  var index = indexes[change.id];
+                  var item = new PouchDbItem(data, index);
+                  updateChild(index, item);
+                }
+              });
+            } else if (collection.length && indexes[change.id]) { //DELETE
+              console.log("Delete")
+              removeChild(change.id);
+              updateIndexes(indexes[change.id]);
+            }
+        }).on('error', function (err) {
+          console.log("err changes", err);
+        });
       }).catch(function (err) {
         console.log("doc already exist", err)
+      });
+
+      db.replicate.from(remoteDb).then(function(resp){
+        console.log("complete", resp);
+      }).catch(function(err){
+        console.log(err);
       });
 
       function getIndex(prevId) {
@@ -104,38 +116,6 @@ angular.module('pouchdb')
         }
       }
 
-      db.replicate.from(remoteDb).on('complete', function(){
-        console.log("COPY FROM REMOTE COMPLETE", collectionName, userDB);
-        db.changes({
-          live: true,
-          include_docs: true,
-          filter: '_view',
-          view: collectionName + '/collection'
-        }).on('change', function (change) {
-          if (!change.deleted) {
-              db.get(change.id).then(function(data) {
-                if (indexes[change.id] == undefined) { // CREATE / READ
-                  addChild(collection.length, new PouchDbItem(data, collection.length)); // Add to end
-                  updateIndexes(0);
-                } else { // UPDATE
-                  var index = indexes[change.id];
-                  var item = new PouchDbItem(data, index);
-                  updateChild(index, item);
-                }
-              });
-            } else if (collection.length && indexes[change.id]) { //DELETE
-              console.log("Delete")
-              removeChild(change.id);
-              updateIndexes(indexes[change.id]);
-            }
-        }).on('error', function (err) {
-          console.log("err changes", err);
-        });
-
-      });
-
-      
-
       collection.$add = function(item) {
         angular.extend(item,{
           "type" : collectionName
@@ -175,9 +155,9 @@ angular.module('pouchdb')
           .on('change', function (change) {
             console.log("SYNC change", change);
             // yo, something changed!
-          }).on('paused', function (info) {
+          }).on('paused', function () {
             // replication was paused, usually because of a lost connection
-            console.log("SYNC Paused", info);
+            console.log("SYNC Paused");
           }).on('active', function (info) {
             console.log("SYNC Active", info);
             // replication was resumed
